@@ -9,10 +9,6 @@ let snapshotFolders = [
   "Screen/__Snapshots__",
 ]
 
-let tcaSnapshotFolders = [
-  "__Snapshots__"
-]
-
 let testGybFiles = [
   "NavigationTree/NavigationTreeBuilder+AnyOf.swift.gyb"
 ]
@@ -34,17 +30,8 @@ let package = Package(
       name: "ComposableDeeplinking",
       targets: ["ComposableDeeplinking"]
     ),
-    .library(
-      name: "ComposableNavigatorTCA",
-      targets: ["ComposableNavigatorTCA"]
-    ),
   ],
   dependencies: [
-    .package(
-      name: "swift-composable-architecture",
-      url: "https://github.com/pointfreeco/swift-composable-architecture",
-      from: "0.7.0"
-    ),
     .package(url: "https://github.com/shibapm/Rocket", from: "1.1.0"), // dev
     .package(name: "SnapshotTesting", url: "https://github.com/pointfreeco/swift-snapshot-testing.git", from: "1.8.2"), // dev
   ],
@@ -58,16 +45,6 @@ let package = Package(
       ]
     ),
     .target(
-      name: "ComposableNavigatorTCA",
-      dependencies: [
-        .target(name: "ComposableNavigator"),
-        .product(
-          name: "ComposableArchitecture",
-          package: "swift-composable-architecture"
-        ),
-      ]
-    ),
-    .target(
       name: "ComposableDeeplinking",
       dependencies: [
         .target(name: "ComposableNavigator"),
@@ -75,7 +52,6 @@ let package = Package(
     ),
     .testTarget(name: "ComposableNavigatorTests", dependencies: ["ComposableNavigator", "SnapshotTesting"], exclude: testGybFiles + snapshotFolders), // dev
     .testTarget(name: "ComposableDeeplinkingTests", dependencies: ["ComposableDeeplinking"]), // dev
-    .testTarget(name: "ComposableNavigatorTCATests", dependencies: ["ComposableNavigatorTCA", "SnapshotTesting"], exclude: tcaSnapshotFolders), // dev
   ]
 )
 
