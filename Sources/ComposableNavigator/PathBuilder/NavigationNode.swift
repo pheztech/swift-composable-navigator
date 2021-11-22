@@ -40,6 +40,7 @@ public struct NavigationNode<Content: View, Successor: View>: View {
 
   public var body: some View {
     content
+      .detentSheet(item: self.detentSheetBinding, style: self.detentSheetStyling, sheet: build(successor:))
       .sheet(
         item: sheetBinding,
         content: build(successor:)
@@ -106,6 +107,31 @@ public struct NavigationNode<Content: View, Successor: View>: View {
 
     return successorView
   }
+    
+    private var detentSheetStyling: AnyDetentSheetStyle? {
+        guard case .detentSheet(_, let style) = successorView?.presentationStyle else { return nil }
+        return style
+    }
+    
+    private var detentSheetBinding: Binding<SuccessorView?> {
+        Binding {
+            guard case .some(.detentSheet) = successorView?.presentationStyle, screen?.hasAppeared ?? false else { return nil }
+            return successorView
+        } set: { value in
+            if let screen = self.screen, !screen.hasAppeared {
+                DispatchQueue.main.async {
+                    navigator.didAppear(id: self.screenID)
+                }
+            }
+            
+            guard value == nil, let successor = successorView?.pathElement, successor.hasAppeared else { return }
+            
+            if self.treatSheetDismissAsAppearInPresenter {
+                self.onAppear(false)
+            }
+            navigator.dismiss(id: successor.id)
+        }
+    }
 
   private var sheetBinding: Binding<SuccessorView?> {
     Binding(
@@ -137,22 +163,23 @@ public struct NavigationNode<Content: View, Successor: View>: View {
     )
   }
   
-  @ViewBuilder private func build(successor: SuccessorView) -> some View {
-    let content = successor
-      .environment(\.parentScreenID, screenID)
-      .environment(\.parentScreen, currentScreen)
-      .environment(\.currentScreenID, successor.pathElement.id)
-      .environment(\.currentScreen, successor.pathElement.content)
-      .environment(\.navigator, navigator)
-      .environment(\.treatSheetDismissAsAppearInPresenter, treatSheetDismissAsAppearInPresenter)
-      .environmentObject(dataSource)
+    @ViewBuilder
+    private func build(successor: SuccessorView) -> some View {
+        let content = successor
+            .environment(\.parentScreenID, screenID)
+            .environment(\.parentScreen, currentScreen)
+            .environment(\.currentScreenID, successor.pathElement.id)
+            .environment(\.currentScreen, successor.pathElement.content)
+            .environment(\.navigator, navigator)
+            .environment(\.treatSheetDismissAsAppearInPresenter, treatSheetDismissAsAppearInPresenter)
+            .environmentObject(dataSource)
 
-    switch successor.pathElement.content.presentationStyle {
-    case .push, .sheet(allowsPush: false):
-      content
-    case .sheet(allowsPush: true):
-      NavigationView { content }
-        .navigationViewStyle(StackNavigationViewStyle())
+        switch successor.pathElement.content.presentationStyle {
+        case .push, .sheet(allowsPush: false), .detentSheet(allowsPush: false, _):
+            content
+        case .sheet(allowsPush: true), .detentSheet(allowsPush: true, _):
+            NavigationView { content }
+                .navigationViewStyle(StackNavigationViewStyle())
+        }
     }
-  }
 }
