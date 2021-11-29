@@ -3,6 +3,6 @@ public extension DeeplinkParser {
   ///
   /// Can be used as a stub value
   static let empty = DeeplinkParser(
-    parse: { _ in nil }
+    parser: { _ in nil }
   )
 }

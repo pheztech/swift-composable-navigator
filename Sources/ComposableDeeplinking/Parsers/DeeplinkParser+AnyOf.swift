@@ -4,9 +4,9 @@ public extension DeeplinkParser {
     _ parsers: [DeeplinkParser]
   ) -> DeeplinkParser {
     DeeplinkParser(
-      parse: { deeplink in
+      parser: { deeplink in
         for parser in parsers {
-          if let path = parser.parse(deeplink) {
+          if let path = await parser.parse(deeplink) {
             return path
           }
         }

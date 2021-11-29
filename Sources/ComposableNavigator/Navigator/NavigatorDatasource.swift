@@ -98,12 +98,14 @@ public extension Navigator {
 
       let pathPrefix = self.path.current.prefix(path.count)
 
+        // get the index of the first path element that changed
+        // - TODO: use firstIndex instead?
       let firstNonMatchingContent = pathPrefix
         .enumerated()
         .first(
           where: { (index, element) in
-            element.content != path[index]
-              || element.content.presentationStyle != path[index].presentationStyle
+              // screen or presentation style different
+            element.content != path[index] || element.content.presentationStyle != path[index].presentationStyle
           }
         )?
         .offset
@@ -114,14 +116,11 @@ public extension Navigator {
       let newPath = path
         .enumerated()
         .map { (index, element) -> NavigationPathElement in
-          let oldPathElement: NavigationPathElement? = matchingContentRange.contains(index)
-            ? self.path.current[index]
-            : nil
+          let oldPathElement: NavigationPathElement? = matchingContentRange.contains(index) ? self.path.current[index] : nil
 
-          let fallBackID = (index == 0) ? ScreenID.root: self.screenID()
+          let fallBackID = (index == 0) ? ScreenID.root : self.screenID()
           let id: ScreenID = oldPathElement.map(\.id) ?? fallBackID
-          let hasAppeared = oldPathElement.map(\.hasAppeared) ?? false
-            && (index != matchingContentRange.last || index == self.path.current.endIndex.advanced(by: -1))
+          let hasAppeared = oldPathElement.map(\.hasAppeared) ?? false && (index != matchingContentRange.last || index == self.path.current.endIndex.advanced(by: -1))
 
           return .screen(
             IdentifiedScreen(
