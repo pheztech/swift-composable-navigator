@@ -13,4 +13,9 @@ public extension Screen {
         return AnyScreen(self)
     }
   }
+    
+    // Workaround for: https://github.com/Bahn-X/swift-composable-navigator/issues/74
+    static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.presentationStyle == rhs.presentationStyle && type(of: lhs) == type(of: rhs)
+    }
 }
