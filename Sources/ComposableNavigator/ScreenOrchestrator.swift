@@ -132,12 +132,28 @@ public extension Navigator {
     private var currentScreenID: ScreenID? {
         path().current.last?.id
     }
-    
+   
+    // - TODO: add auto dismiss for sheets that dont allow navigation?
     /// - returns: Indicates if the navigation was successful
     @discardableResult
     func go<S: Screen> (to screen: S) -> Bool {
         guard let currentScreenID = self.currentScreenID else { return false }
         self.go(to: screen, on: currentScreenID)
+        return true
+    }
+    
+    @discardableResult
+    func go (to path: [AnyScreen]) -> Bool {
+        guard let currentScreenID = self.currentScreenID else { return false }
+        self.go(to: path, on: currentScreenID)
+        return true
+    }
+    
+    /// - returns: Indicates if the dismissal was successful
+    @discardableResult
+    func dismiss () -> Bool {
+        guard let currentScreenID = self.currentScreenID else { return false }
+        self.dismiss(id: currentScreenID)
         return true
     }
 }
