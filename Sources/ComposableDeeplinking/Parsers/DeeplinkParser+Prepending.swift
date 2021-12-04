@@ -9,8 +9,8 @@ public extension DeeplinkParser {
     to parser: DeeplinkParser
   ) -> DeeplinkParser {
     DeeplinkParser(
-      parse: { deeplink in
-        parser.parse(deeplink).flatMap { parsedPath in
+      parser: { deeplink in
+        await parser.parse(deeplink).flatMap { parsedPath in
           pathToEntrypoint + parsedPath
         }
       }
