@@ -1,9 +1,10 @@
 //
 //  DetentSheet.swift
-//  StarLardKit
-//  https://gist.github.com/StarLard/5662feeb0b2762e6519e83fa6555fb0d
 //
 //  Created by Caleb Friden on 9/28/21.
+//  https://gist.github.com/StarLard/5662feeb0b2762e6519e83fa6555fb0d
+//  Created by Heath Hwang on 5/16/20.
+//  https://gist.github.com/fullc0de/3d68b6b871f20630b981c7b4d51c8373
 //  Modified by Ken Pham on 11/20/21.
 //
 
@@ -25,14 +26,14 @@ public protocol DetentSheetStyle: Hashable {
 
 @available(iOS 15, *)
 public struct DefaultDetentSheetStyle: DetentSheetStyle {
-    public var largestUndimmedDetentIdentifier: UISheetPresentationController.Detent.Identifier? = nil
-    public var prefersScrollingExpandsWhenScrolledToEdge: Bool = true
-    public var prefersGrabberVisible: Bool = false
-    public var prefersEdgeAttachedInCompactHeight: Bool = false
-    public var widthFollowsPreferredContentSizeWhenEdgeAttached: Bool = false
-    public var preferredCornerRadius: CGFloat? = nil
-    public var detents: [UISheetPresentationController.Detent] = [.medium(), .large()]
-    public var allowsDismissalGesture: Bool = true
+    public var largestUndimmedDetentIdentifier: UISheetPresentationController.Detent.Identifier?
+    public var prefersScrollingExpandsWhenScrolledToEdge: Bool
+    public var prefersGrabberVisible: Bool
+    public var prefersEdgeAttachedInCompactHeight: Bool
+    public var widthFollowsPreferredContentSizeWhenEdgeAttached: Bool
+    public var preferredCornerRadius: CGFloat?
+    public var detents: [UISheetPresentationController.Detent]
+    public var allowsDismissalGesture: Bool
     
     public init (largestUndimmedDetentIdentifier: UISheetPresentationController.Detent.Identifier? = nil,
                   prefersScrollingExpandsWhenScrolledToEdge: Bool = true,
@@ -154,7 +155,14 @@ extension EnvironmentValues {
 
 @available(iOS 15.0, *)
 struct DetentSheetPresenter<Sheet: View>: ViewModifier {
-    init(selectedDetentIdentifier: Binding<UISheetPresentationController.Detent.Identifier?>?,
+    @Environment(\.detentSheetStyle) var style
+    
+    @Binding var isSheetPresented: Bool
+    // - TODO: this most likely needs to be reimplemented (also use .constant(nil) if it isn't set)
+    var selectedDetentIdentifier: Binding<UISheetPresentationController.Detent.Identifier?>?
+    let sheet: () -> Sheet
+    
+    init (selectedDetentIdentifier: Binding<UISheetPresentationController.Detent.Identifier?>?,
          isSheetPresented: Binding<Bool>,
          @ViewBuilder sheet: @escaping () -> Sheet) {
         self.selectedDetentIdentifier = selectedDetentIdentifier
@@ -162,161 +170,41 @@ struct DetentSheetPresenter<Sheet: View>: ViewModifier {
         self.sheet = sheet
     }
     
-    func body(content: Content) -> some View {
-        DetentSheetStack(isSheetPresented: $isSheetPresented,
-                         selectedDetentIdentifier: selectedDetentIdentifier,
-                         background: { content },
-                         sheet: sheet)
-        // keeps the background content from not taking up the whole screen
-            .ignoresSafeArea()
-    }
-    
-    @Binding var isSheetPresented: Bool
-    var selectedDetentIdentifier: Binding<UISheetPresentationController.Detent.Identifier?>?
-    let sheet: () -> Sheet
-}
-
-// MARK: Wrapping View
-
-@available(iOS 15.0, *)
-struct DetentSheetStack<Background: View, Sheet: View>: UIViewControllerRepresentable {
-    typealias UIViewControllerType = UIViewController
-    
-    @Binding var isSheetPresented: Bool
-    var selectedDetentIdentifier: Binding<UISheetPresentationController.Detent.Identifier?>?
-    let background: Background
-    let sheet: () -> Sheet
-    
-    init(isSheetPresented: Binding<Bool>,
-         selectedDetentIdentifier: Binding<UISheetPresentationController.Detent.Identifier?>?,
-         @ViewBuilder background: () -> Background,
-         @ViewBuilder sheet: @escaping () -> Sheet) {
-        self.selectedDetentIdentifier = selectedDetentIdentifier
-        self._isSheetPresented = isSheetPresented
-        self.background = background()
-        self.sheet = sheet
-    }
-    
-    func makeCoordinator() -> Coordinator<Background, Sheet> {
-        Coordinator(self)
-    }
-    
-    func makeUIViewController(context: Context) -> UIViewController {
-        configureSheet(context: context)
-        context.coordinator.sheetViewController.isModalInPresentation = !context.environment.detentSheetStyle.allowsDismissalGesture
-        return context.coordinator.sheetPresentingViewController
-    }
-    
-    func updateUIViewController(_ uiViewController: UIViewController, context: Context) {
-        configureSheet(context: context)
-    }
-    
-    private func configureSheet(context: Context) {
-        guard let sheetPresentationController = context.coordinator.sheetViewController.sheetPresentationController else { return }
-        /// commented out code would require the end user to set the binding value in a `withAnimation` block
-        let animated = /* context.transaction.animation != nil && */ !context.transaction.disablesAnimations
-        let presentingViewController = context.coordinator.sheetPresentingViewController
-        let configure = {
-            sheetPresentationController.selectedDetentIdentifier = selectedDetentIdentifier?.wrappedValue
-            sheetPresentationController.largestUndimmedDetentIdentifier = context.environment.detentSheetStyle.largestUndimmedDetentIdentifier
-            sheetPresentationController.prefersScrollingExpandsWhenScrolledToEdge = context.environment.detentSheetStyle.prefersScrollingExpandsWhenScrolledToEdge
-            sheetPresentationController.prefersGrabberVisible = context.environment.detentSheetStyle.prefersGrabberVisible
-            sheetPresentationController.prefersEdgeAttachedInCompactHeight = context.environment.detentSheetStyle.prefersEdgeAttachedInCompactHeight
-            sheetPresentationController.widthFollowsPreferredContentSizeWhenEdgeAttached = context.environment.detentSheetStyle.widthFollowsPreferredContentSizeWhenEdgeAttached
-            sheetPresentationController.preferredCornerRadius = context.environment.detentSheetStyle.preferredCornerRadius
-            sheetPresentationController.detents = context.environment.detentSheetStyle.detents
-            sheetPresentationController.delegate = context.coordinator
-        }
-        if animated {
-            sheetPresentationController.animateChanges {
-                configure()
+    func body (content: Content) -> some View {
+        content.onChange(of: isSheetPresented) { isPresented in
+            if isPresented {
+                // - TODO: see if this can be done without delay
+                DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(100)) {
+                    let currentViewController = UIViewController.currentViewController
+                    let viewController = SheetViewController(onDismiss: handleDismiss, content: sheet)
+                    
+                    viewController.sheetPresentationController?.selectedDetentIdentifier = selectedDetentIdentifier?.wrappedValue
+                    viewController.sheetPresentationController?.largestUndimmedDetentIdentifier = style.largestUndimmedDetentIdentifier
+                    viewController.sheetPresentationController?.prefersScrollingExpandsWhenScrolledToEdge = style.prefersScrollingExpandsWhenScrolledToEdge
+                    viewController.sheetPresentationController?.prefersGrabberVisible = style.prefersGrabberVisible
+                    viewController.sheetPresentationController?.prefersEdgeAttachedInCompactHeight = style.prefersEdgeAttachedInCompactHeight
+                    viewController.sheetPresentationController?.widthFollowsPreferredContentSizeWhenEdgeAttached = style.widthFollowsPreferredContentSizeWhenEdgeAttached
+                    viewController.sheetPresentationController?.preferredCornerRadius = style.preferredCornerRadius
+                    viewController.sheetPresentationController?.detents = style.detents
+                    
+                    currentViewController?.present(viewController, animated: true, completion: nil)
+                }
             }
-        } else {
-            configure()
         }
-        presentingViewController.shouldSheetBeInitiallyPresented = isSheetPresented
-        presentingViewController.setSheetPresented(isSheetPresented, animated: animated)
     }
     
-    final class Coordinator<Background: View, Sheet: View>: NSObject, UISheetPresentationControllerDelegate, SheetViewControllerDelegate {
-        var parent: DetentSheetStack<Background, Sheet>
-        let sheetViewController: SheetViewController<Sheet>
-        let sheetPresentingViewController: SheetPresentingViewController<Background>
-        
-        init(_ sheetPresenter: DetentSheetStack<Background, Sheet>) {
-            self.parent = sheetPresenter
-            let sheetHostingController = SheetViewController(parent.sheet)
-            self.sheetViewController = sheetHostingController
-            self.sheetPresentingViewController = SheetPresentingViewController(rootView: parent.background,
-                                                                          shouldSheetBeInitiallyPresented: parent.isSheetPresented,
-                                                                          sheetViewController: sheetHostingController)
-            super.init()
-        }
-        
-        func sheetPresentationControllerDidChangeSelectedDetentIdentifier(_ sheetPresentationController: UISheetPresentationController) {
-            parent.selectedDetentIdentifier?.wrappedValue = sheetPresentationController.selectedDetentIdentifier
-        }
-        
-        func sheetViewControllerDidDismiss<Content>(_ sheetViewController: SheetViewController<Content>) where Content : View {
-            parent.isSheetPresented = false
-        }
-        
-        func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
-            parent.isSheetPresented = false
-        }
+    func handleDismiss () {
+        self.isSheetPresented = false
     }
 }
 
 // MARK: Supporting UIKit Views
 
-final class SheetPresentingViewController<Content: View>: UIHostingController<Content> {
-    var sheetViewController: UIViewController
-    var isSheetPresented: Bool { sheetViewController.presentingViewController != nil }
-    
-    var shouldSheetBeInitiallyPresented: Bool
-    
-    private var viewHasAppeared = false
-    
-    init(rootView: Content, shouldSheetBeInitiallyPresented: Bool, sheetViewController: UIViewController) {
-        self.shouldSheetBeInitiallyPresented = shouldSheetBeInitiallyPresented
-        self.sheetViewController = sheetViewController
-        super.init(rootView: rootView)
-    }
-    
-    @MainActor
-    @objc required dynamic init?(coder aDecoder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-    
-    override func viewDidAppear(_ animated: Bool) {
-        super.viewDidAppear(animated)
-        
-        guard !self.viewHasAppeared else { return }
-        self.viewHasAppeared = true
-        self.setSheetPresented(shouldSheetBeInitiallyPresented, animated: animated)
-    }
-    
-    func setSheetPresented(_ presentSheet: Bool, animated: Bool) {
-        guard self.viewHasAppeared else { return }
-        if presentSheet, !self.isSheetPresented {
-            present(sheetViewController, animated: animated, completion: nil)
-        } else if !presentSheet, self.isSheetPresented {
-            sheetViewController.dismiss(animated: animated, completion: nil)
-        }
-    }
-}
-
-protocol SheetViewControllerDelegate: AnyObject {
-    func sheetViewControllerDidDismiss<Content: View>(_ sheetViewController: SheetViewController<Content>)
-}
-
 final class SheetViewController<Content: View>: UIHostingController<Content> {
-    weak var delegate: SheetViewControllerDelegate?
-
-    var content: () -> Content
+    let onDismiss: () -> ()
     
-    init (_ content: @escaping () -> Content) {
-        self.content = content
+    init (onDismiss: @escaping () -> (), content: @escaping () -> Content) {
+        self.onDismiss = onDismiss
         super.init(rootView: content())
     }
     
@@ -325,15 +213,9 @@ final class SheetViewController<Content: View>: UIHostingController<Content> {
         fatalError("init(coder:) has not been implemented")
     }
     
-    // redraw content before appearing
-    override func viewWillAppear (_ animated: Bool) {
-        super.viewWillAppear(animated)
-        self.rootView = content()
-    }
-    
-    override func dismiss(animated: Bool, completion: (() -> Void)? = nil) {
-        super.dismiss(animated: animated, completion: completion)
-        delegate?.sheetViewControllerDidDismiss(self)
+    override func viewWillDisappear (_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        self.onDismiss()
     }
 }
 
@@ -382,3 +264,14 @@ struct DetentSheet_Previews: PreviewProvider {
     }
 }
 #endif
+
+extension UIViewController {
+    static var currentViewController: UIViewController? {
+        var topController = UIApplication.shared.windows.first { $0.isKeyWindow }?.rootViewController
+        // while presented controller exists, set it to the top controller until presentedViewController = nil
+        while let presentedViewController = topController?.presentedViewController {
+            topController = presentedViewController
+        }
+        return topController
+    }
+}
