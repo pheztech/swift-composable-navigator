@@ -35,7 +35,7 @@
 
 - Any commits past [Tag iOS13-14](https://github.com/pheztech/swift-composable-navigator/releases/tag/iOS13-14) is iOS 15 only.
 - Added Detent Sheets
-- Modified Deeplink to support  
+- Modified Deeplink to support UserActivity 
 
 ## Vanilla SwiftUI navigation
 A typical, vanilla SwiftUI application manages its navigation state (i.e. is a sheet or a push active) either directly in its Views or in ObservableObjects.

@@ -178,6 +178,7 @@ struct DetentSheetPresenter<Sheet: View>: ViewModifier {
                     let currentViewController = UIViewController.currentViewController
                     let viewController = SheetViewController(onDismiss: handleDismiss, content: sheet)
                     
+                    // - TODO: stlying isnt working
                     viewController.sheetPresentationController?.selectedDetentIdentifier = selectedDetentIdentifier?.wrappedValue
                     viewController.sheetPresentationController?.largestUndimmedDetentIdentifier = style.largestUndimmedDetentIdentifier
                     viewController.sheetPresentationController?.prefersScrollingExpandsWhenScrolledToEdge = style.prefersScrollingExpandsWhenScrolledToEdge
@@ -266,8 +267,10 @@ struct DetentSheet_Previews: PreviewProvider {
 #endif
 
 extension UIViewController {
+    // https://stackoverflow.com/questions/68387187/how-to-use-uiwindowscene-windows-on-ios-15
     static var currentViewController: UIViewController? {
-        var topController = UIApplication.shared.windows.first { $0.isKeyWindow }?.rootViewController
+        let window = UIApplication.shared.connectedScenes.filter { $0.activationState == .foregroundActive }.first { $0 is UIWindowScene }.flatMap { $0 as? UIWindowScene }?.windows.first(where: \.isKeyWindow)
+        var topController = window?.rootViewController
         // while presented controller exists, set it to the top controller until presentedViewController = nil
         while let presentedViewController = topController?.presentedViewController {
             topController = presentedViewController
