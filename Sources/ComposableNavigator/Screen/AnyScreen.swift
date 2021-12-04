@@ -16,3 +16,9 @@ public struct AnyScreen: Hashable, Screen {
     (screen as? S) != nil
   }
 }
+
+public extension AnyScreen {
+    static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.screen == rhs.screen
+    }
+}
