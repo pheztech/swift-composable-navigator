@@ -17,7 +17,7 @@ public struct DeeplinkParser {
     /// Parses a Deeplink to a navigation path
     ///
     /// - Returns: If the DeepLinkParser is responsible for the passed deeplink, it returns the built navigation path. Else nil.
-    public func parse(_ deeplink: Deeplink) -> ActiveNavigationPath? {
+    public func parse(_ deeplink: Deeplink) async -> ActiveNavigationPath? {
         await parser(deeplink)
     }
 }
