@@ -130,7 +130,7 @@ public extension EnvironmentValues {
  */
 public extension Navigator {
     private var currentScreenID: ScreenID? {
-        path().current.last?.id
+        navigationTree().current.last?.id
     }
    
     // - TODO: add auto dismiss for sheets that dont allow navigation?
@@ -145,7 +145,7 @@ public extension Navigator {
     @discardableResult
     func go (to path: [AnyScreen]) -> Bool {
         guard let currentScreenID = self.currentScreenID else { return false }
-        self.go(to: path, on: currentScreenID)
+        self.go(to: path.map { .screen($0.eraseToAnyScreen()) }, on: currentScreenID)
         return true
     }
     
