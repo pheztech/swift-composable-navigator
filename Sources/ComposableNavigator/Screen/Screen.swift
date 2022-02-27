@@ -15,7 +15,8 @@ public extension Screen {
   }
     
     // Workaround for: https://github.com/Bahn-X/swift-composable-navigator/issues/74
+    // This breaks tabbed view since it doesnt check to see if the tabs match (i.e. 0 inactiveTabs == 1 inactiveTabs)
     static func == (lhs: Self, rhs: Self) -> Bool {
-        lhs.presentationStyle == rhs.presentationStyle && type(of: lhs) == type(of: rhs)
+        lhs.presentationStyle == rhs.presentationStyle && type(of: lhs) == type(of: rhs) && lhs.hashValue == rhs.hashValue
     }
 }
