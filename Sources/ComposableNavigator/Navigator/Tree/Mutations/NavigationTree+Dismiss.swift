@@ -11,6 +11,8 @@ extension ActiveNavigationTree {
     return map { element in
       if case .tabbed(let screen) = element {
         return .tabbed(screen.dismiss(id: id))
+      } else if case .split(let screen) = element {
+          return .split(screen.dismiss(id: id))
       }
       return element
     }
@@ -37,4 +39,16 @@ extension TabScreen {
       hasAppeared: hasAppeared
     )
   }
+}
+
+extension SplitScreen {
+    func dismiss (id: ScreenID) -> SplitScreen {
+        return SplitScreen(
+            id: self.id,
+            column: column.dismiss(id: id),
+            detail: detail.dismiss(id: id),
+            presentationStyle: self.presentationStyle,
+            hasAppeared: self.hasAppeared
+        )
+    }
 }

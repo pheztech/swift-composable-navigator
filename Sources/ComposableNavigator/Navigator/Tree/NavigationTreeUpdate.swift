@@ -34,6 +34,12 @@ public struct NavigationTreeUpdate: Equatable {
           .flatMap { tab in
             extractPathComponent(for: id, from: tab.path)
           }
+      case let .split(splitScreen):
+          if splitScreen.column.ids().contains(id) {
+              return extractPathComponent(for: id, from: splitScreen.column)
+          } else if splitScreen.detail.ids().contains(id) {
+              return extractPathComponent(for: id, from: splitScreen.detail)
+          }
       }
     }
 
@@ -58,6 +64,12 @@ public struct NavigationTreeUpdate: Equatable {
           .first(where: { $0.ids().contains(id) })
           .flatMap { tab in
             extractSuccessor(of: id, from: tab.path)
+          }
+      case let .split(splitScreen):
+          if splitScreen.column.ids().contains(id) {
+              return extractSuccessor(of: id, from: splitScreen.column)
+          } else if splitScreen.detail.ids().contains(id) {
+              return extractSuccessor(of: id, from: splitScreen.detail)
           }
       }
     }

@@ -53,6 +53,15 @@ extension ActiveNavigationTreeElement {
           screenID: screenID
         )
       )
+    case .split(let screen):
+        return .split(
+            screen.go(
+                to: successor,
+                on: id,
+                forceNavigation: forceNavigation,
+                screenID: screenID
+            )
+        )
     }
   }
 }
@@ -119,4 +128,23 @@ extension TabScreen {
 
     return self
   }
+}
+
+extension SplitScreen {
+    func go (
+        to successor: AnyScreen,
+        on id: ScreenID,
+        forceNavigation: Bool,
+        screenID: () -> ScreenID
+    ) -> SplitScreen {
+        if column.ids().contains(id) {
+            let newPath = column.go(to: successor, on: id, forceNavigation: forceNavigation, screenID: screenID)
+            return SplitScreen(id: self.id, column: newPath, detail: detail, presentationStyle: presentationStyle, hasAppeared: hasAppeared)
+        } else if detail.ids().contains(id) {
+            let newPath = detail.go(to: successor, on: id, forceNavigation: forceNavigation, screenID: screenID)
+            return SplitScreen(id: self.id, column: column, detail: newPath, presentationStyle: presentationStyle, hasAppeared: hasAppeared)
+        }
+        
+        return self
+    }
 }

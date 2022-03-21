@@ -2,13 +2,14 @@ public typealias ActiveNavigationPath = [ActiveNavigationPathElement]
 
 public extension ActiveNavigationPath {
   func toNavigationTree(screenID: () -> ScreenID) -> ActiveNavigationTree {
-    map { $0.toNavigationTreeElement(screenID: screenID) }
+      self.map { $0.toNavigationTreeElement(screenID: screenID) }
   }
 }
 
 public indirect enum ActiveNavigationPathElement: Hashable {
   case screen(AnyScreen)
   case tabbed(ActiveTab)
+    case split(SplitPath)
 
   public static func tabbed<A: Activatable, S: Screen>(active: A, content: S) -> Self {
     .tabbed(
@@ -18,6 +19,14 @@ public indirect enum ActiveNavigationPathElement: Hashable {
       )
     )
   }
+   
+    public static func split (column: ActiveNavigationPath, detail: ActiveNavigationPath) -> Self {
+        .split(SplitPath(column: column, detail: detail))
+    }
+    
+    public static func split<Column: Screen, Detail: Screen> (column: Column, detail: Detail) -> Self {
+        .split(column: [ .screen(column.eraseToAnyScreen()) ], detail: [ .screen(detail.eraseToAnyScreen()) ])
+    }
 
   var presentationStyle: ScreenPresentationStyle {
     switch self {
@@ -25,6 +34,8 @@ public indirect enum ActiveNavigationPathElement: Hashable {
       return screen.presentationStyle
     case let .tabbed(screen):
       return screen.path.first?.presentationStyle ?? .push
+    case .split:
+        return .push
     }
   }
 
@@ -51,6 +62,10 @@ public indirect enum ActiveNavigationPathElement: Hashable {
           hasAppeared: false
         )
       )
+    case let .split(screen):
+        return .split(
+            .init(id: screenID(), column: screen.columnPath.toNavigationTree(screenID: screenID), detail: screen.detailPath.toNavigationTree(screenID: screenID), presentationStyle: .push, hasAppeared: false)
+        )
     }
   }
 }
@@ -66,4 +81,14 @@ public extension ActiveNavigationPathElement {
       self.path = path
     }
   }
+    
+    struct SplitPath: Hashable {
+        let columnPath: ActiveNavigationPath
+        let detailPath: ActiveNavigationPath
+        
+        public init (column: ActiveNavigationPath, detail: ActiveNavigationPath) {
+            self.columnPath = column
+            self.detailPath = detail
+        }
+    }
 }

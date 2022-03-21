@@ -13,6 +13,8 @@ extension ActiveNavigationTreeElement {
       return screen.content == content ? screen.id: nil
     case .tabbed(let screen):
       return screen.lastOccurrence(of: content)
+    case .split(let screen):
+        return screen.lastOccurrence(of: content)
     }
   }
 }
@@ -30,4 +32,15 @@ extension TabScreen {
     }
     return nil
   }
+}
+
+extension SplitScreen {
+    func lastOccurrence (of content: AnyScreen) -> ScreenID? {
+        if column.contents().contains(content) {
+            return column.lastOccurrence(of: content)
+        } else if detail.contents().contains(content) {
+            return detail.lastOccurrence(of: content)
+        }
+        return nil
+    }
 }

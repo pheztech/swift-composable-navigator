@@ -75,7 +75,7 @@ public extension PathBuilders {
 extension ActiveNavigationTreeElement {
   func wildcard<S: Screen>(screen: S) -> ActiveNavigationTreeElement {
     switch self {
-    case .screen, .tabbed:
+    case .screen, .tabbed, .split:
       return .screen(
         IdentifiedScreen(
           id: id,

@@ -27,6 +27,8 @@ extension ActiveNavigationTreeElement {
       return .tabbed(
         screen.setHasAppeared(id: id, newValue)
       )
+    case .split(let screen):
+        return .split(screen.setHasAppeared(id: id, newValue))
     }
   }
 }
@@ -58,4 +60,14 @@ extension TabScreen {
         hasAppeared: hasAppeared
     )
   }
+}
+
+extension SplitScreen {
+    func setHasAppeared (id: ScreenID, _ newValue: Bool) -> SplitScreen {
+        if self.id == id {
+            return SplitScreen(id: id, column: column, detail: detail, presentationStyle: presentationStyle, hasAppeared: newValue)
+        }
+        
+        return SplitScreen(id: self.id, column: column.setHasAppeared(id: id, newValue), detail: detail.setHasAppeared(id: id, newValue), presentationStyle: presentationStyle, hasAppeared: hasAppeared)
+    }
 }

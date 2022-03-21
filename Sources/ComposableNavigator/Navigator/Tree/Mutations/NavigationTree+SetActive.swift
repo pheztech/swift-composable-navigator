@@ -9,7 +9,7 @@ extension ActiveNavigationTree {
 extension ActiveNavigationTreeElement {
   func activate(_ activatable: AnyActivatable) -> ActiveNavigationTreeElement {
     switch self {
-    case .screen:
+    case .screen, .split:
       return self
     case .tabbed(let screen):
       return .tabbed(screen.activate(activatable))

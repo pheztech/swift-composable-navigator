@@ -21,7 +21,7 @@ extension ActiveNavigationTreeElement {
     initScreenID: @escaping () -> ScreenID
   ) -> ActiveNavigationTreeElement {
     switch self {
-    case .screen:
+    case .screen, .split:
       return self
 
     case .tabbed(let screen):

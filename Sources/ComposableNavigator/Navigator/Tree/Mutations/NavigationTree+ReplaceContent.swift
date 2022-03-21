@@ -29,6 +29,10 @@ extension ActiveNavigationTreeElement {
       )
     case .tabbed(let screen):
       return .tabbed(screen.replaceContent(of: id, with: newContent))
+    case .split(let screen) where id == screen.id:
+        return .screen(.init(id: screen.id, content: newContent, hasAppeared: screen.hasAppeared))
+    case .split(let screen):
+        return .split(screen.replaceContent(of: id, with: newContent))
     }
   }
 }
@@ -53,4 +57,10 @@ extension TabScreen {
       hasAppeared: hasAppeared
     )
   }
+}
+
+extension SplitScreen {
+    func replaceContent (of id: ScreenID, with newContent: AnyScreen) -> SplitScreen {
+        return SplitScreen(id: self.id, column: column.replaceContent(of: id, with: newContent), detail: detail.replaceContent(of: id, with: newContent), presentationStyle: presentationStyle, hasAppeared: hasAppeared)
+    }
 }
