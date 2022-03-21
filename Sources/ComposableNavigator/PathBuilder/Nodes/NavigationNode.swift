@@ -2,37 +2,23 @@ import SwiftUI
 
 /// Screen container view, taking care of push and sheet bindings.
 public struct NavigationNode<Content: View, Successor: View>: View {
-  private struct SuccessorView: Identifiable, View {
-    let pathElement: NavigationPathElement
-    let body: Successor
+    @Environment(\.currentScreen) private var currentScreen
+    @Environment(\.navigator) private var navigator
+    @Environment(\.treatSheetDismissAsAppearInPresenter) private var treatSheetDismissAsAppearInPresenter
+    @EnvironmentObject private var dataSource: Navigator.Datasource
 
-    var id: ScreenID { pathElement.id }
-    var presentationStyle: ScreenPresentationStyle {
-      pathElement.content.presentationStyle
-    }
-
-    init(successor: NavigationPathElement, content: Successor) {
-      self.pathElement = successor
-      self.body = content
-    }
-  }
-
-  @Environment(\.currentScreenID) private var screenID
-  @Environment(\.currentScreen) private var currentScreen
-  @Environment(\.navigator) private var navigator
-  @Environment(\.treatSheetDismissAsAppearInPresenter) private var treatSheetDismissAsAppearInPresenter
-  @EnvironmentObject private var dataSource: Navigator.Datasource
-
-
-  let content: Content
-  let onAppear: (Bool) -> Void
-  let buildSuccessor: (NavigationPathElement) -> Successor?
+    let screenID: ScreenID
+    let content: Content
+    let onAppear: (Bool) -> Void
+    let buildSuccessor: (ActiveNavigationTreeElement) -> Successor?
 
   public init(
+    id screenID: ScreenID,
     content: Content,
     onAppear: @escaping (Bool) -> Void,
-    buildSuccessor: @escaping (NavigationPathElement) -> Successor?
+    buildSuccessor: @escaping (ActiveNavigationTreeElement) -> Successor?
   ) {
+      self.screenID = screenID
     self.content = content
     self.onAppear = onAppear
     self.buildSuccessor = buildSuccessor
@@ -50,33 +36,44 @@ public struct NavigationNode<Content: View, Successor: View>: View {
           destination: push.flatMap(build(successor:)),
           isActive: pushIsActive,
           label: { EmptyView() }
-        )
+        ).isDetailLink(pushIsDetail)
       )
       .uiKitOnAppear {
         if let screen = self.screen {
-          self.onAppear(!screen.hasAppeared)
-
-          if !screen.hasAppeared {
-            DispatchQueue.main.async {
-              navigator.didAppear(id: screenID)
-            }
-          }
+            self.screenDidAppear(screen)
         }
       }
   }
+    
+    private func screenDidAppear (_ screen: ActiveNavigationTreeElement) {
+        self.onAppear(!screen.hasAppeared)
+        
+        if !screen.hasAppeared {
+          DispatchQueue.main.async {
+              navigator.didAppear(id: screen.id)
+          }
+        }
+    }
 
-  private var screen: NavigationPathElement? {
-    dataSource.path.component(for: screenID).current
+  private var screen: ActiveNavigationTreeElement? {
+    dataSource.navigationTree.component(for: screenID).current
   }
 
   private var successorView: SuccessorView? {
-    let successorUpdate = dataSource.path.successor(of: screenID)
+    let successorUpdate = dataSource.navigationTree.successor(of: screenID)
     return successorUpdate.current.flatMap { successor in
       buildSuccessor(successor).flatMap { content in
         SuccessorView(successor: successor, content: content)
       }
     }
   }
+    
+    private var pushIsDetail: Bool {
+        if case .split(let screen) = self.screen {
+            return screen.detail.ids().contains(screenID)
+        }
+        return false
+    }
 
   private var pushIsActive: Binding<Bool> {
     Binding(
@@ -181,5 +178,22 @@ public struct NavigationNode<Content: View, Successor: View>: View {
             NavigationView { content }
                 .navigationViewStyle(StackNavigationViewStyle())
         }
+    }
+}
+
+extension NavigationNode {
+    private struct SuccessorView: Identifiable, View {
+      let pathElement: ActiveNavigationTreeElement
+      let body: Successor
+
+      var id: ScreenID { pathElement.id }
+      var presentationStyle: ScreenPresentationStyle {
+        pathElement.content.presentationStyle
+      }
+
+      init(successor: ActiveNavigationTreeElement, content: Successor) {
+        self.pathElement = successor
+        self.body = content
+      }
     }
 }

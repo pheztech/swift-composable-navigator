@@ -15,7 +15,15 @@ public extension Screen {
   }
     
     // Workaround for: https://github.com/Bahn-X/swift-composable-navigator/issues/74
-    static func == (lhs: Self, rhs: Self) -> Bool {
-        lhs.presentationStyle == rhs.presentationStyle && type(of: lhs) == type(of: rhs)
-    }
+    // This breaks tabbed view since it doesnt check to see if the tabs match (i.e. 0 inactiveTabs == 1 inactiveTabs)
+    // - TODO: theres definitely a better way to handle this but for now its gonna be jank
+//    static func == (lhs: Self, rhs: Self) -> Bool {
+//        if (type(of: lhs) == TabScreen.self && type(of: rhs) == TabScreen.self) ||
+//            (type(of: lhs) == SplitScreen.self && type(of: rhs) == SplitScreen.self) {
+//            return lhs.hashValue == rhs.hashValue
+//        } else {
+//            return lhs.presentationStyle == rhs.presentationStyle && type(of: lhs) == type(of: rhs)
+//            return lhs.hashValue == rhs.hashValue
+//        }
+//    }
 }

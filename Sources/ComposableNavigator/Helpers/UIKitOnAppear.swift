@@ -2,14 +2,6 @@ import UIKit
 import SwiftUI
 
 struct UIKitAppear: UIViewControllerRepresentable {
-  final class UIAppearViewController: UIViewController {
-    var action: () -> Void = {}
-
-    override func viewDidAppear(_ animated: Bool) {
-      action()
-    }
-  }
-
   let action: () -> Void
 
   func makeUIViewController(context: Context) -> UIAppearViewController {
@@ -19,6 +11,17 @@ struct UIKitAppear: UIViewControllerRepresentable {
   }
 
   func updateUIViewController(_ controller: UIAppearViewController, context: Context) { }
+}
+
+extension UIKitAppear {
+    final class UIAppearViewController: UIViewController {
+      var action: () -> Void = {}
+
+      override func viewDidAppear(_ animated: Bool) {
+          super.viewDidAppear(animated)
+        action()
+      }
+    }
 }
 
 extension View {

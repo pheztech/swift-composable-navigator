@@ -18,7 +18,10 @@ public struct AnyScreen: Hashable, Screen {
 }
 
 public extension AnyScreen {
-    static func == (lhs: Self, rhs: Self) -> Bool {
-        lhs.screen == rhs.screen
-    }
+    /// - NOTE: this was added as a work around for screens not reloading when Screens store the ViewModel, it breaks navigation for tabbed views so its removed for now
+    /// https://github.com/Bahn-X/swift-composable-navigator/issues/74
+//    static func == (lhs: Self, rhs: Self) -> Bool {
+//        lhs.screen == rhs.screen
+//        lhs.hashValue == rhs.hashValue
+//    }
 }

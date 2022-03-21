@@ -15,7 +15,7 @@ public class ScreenOrchestrator: ObservableObject {
         }
         return UnbuildableScreen().eraseToAnyScreen()
     }()
-    
+   
     /// The `ScreenID` of the screen the view is embedded in
     ///
     /// ComposableNavigator makes sure that this value is always filled with the correct value, as long as you embed your content in a `Root` view.
@@ -129,8 +129,12 @@ public extension EnvironmentValues {
  foreground.
  */
 public extension Navigator {
+    private var currentScreen: ActiveNavigationTreeElement? {
+        navigationTree().current.last
+    }
+    
     private var currentScreenID: ScreenID? {
-        path().current.last?.id
+        currentScreen?.id
     }
    
     // - TODO: add auto dismiss for sheets that dont allow navigation?
@@ -145,8 +149,21 @@ public extension Navigator {
     @discardableResult
     func go (to path: [AnyScreen]) -> Bool {
         guard let currentScreenID = self.currentScreenID else { return false }
+        self.go(to: path.map { .screen($0.eraseToAnyScreen()) }, on: currentScreenID)
+        return true
+    }
+    
+    @discardableResult
+    func go (to path: ActiveNavigationPath) -> Bool {
+        guard let currentScreenID = self.currentScreenID else { return false }
         self.go(to: path, on: currentScreenID)
         return true
+    }
+    
+    /// Helper method to navigate to a split screen from a `.screen` or `.tabbed` path element
+    @discardableResult
+    func split<Column: Screen, Detail: Screen> (column: Column, detail: Detail) -> Bool {
+        self.go(to: [.split(.init(column: [.screen(column.eraseToAnyScreen())], detail: [.screen(detail.eraseToAnyScreen())]))])
     }
     
     /// - returns: Indicates if the dismissal was successful
@@ -154,6 +171,33 @@ public extension Navigator {
     func dismiss () -> Bool {
         guard let currentScreenID = self.currentScreenID else { return false }
         self.dismiss(id: currentScreenID)
+        return true
+    }
+    
+    @discardableResult
+    func go<S: Screen> (to screen: S, on splitContent: SplitScreen.Content) -> Bool {
+        guard let currentScreen = self.currentScreen else { return false }
+        switch currentScreen {
+        case .split(let splitScreen):
+            guard let screenId = splitScreen.path(for: splitContent).last?.id else { return false }
+            self.go(to: screen, on: screenId)
+        default:
+            return false
+        }
+        return true
+    }
+    
+    @discardableResult
+    func replaceContent<S: Screen> (of splitContent: SplitScreen.Content, with screen: S) -> Bool {
+        guard let currentScreen = self.currentScreen else { return false }
+
+        switch currentScreen {
+        case .split(let splitScreen):
+            guard let screenId = splitScreen.path(for: splitContent).first?.id else { return false }
+            self.replaceContent(of: screenId, with: screen)
+        default:
+            return false
+        }
         return true
     }
 }

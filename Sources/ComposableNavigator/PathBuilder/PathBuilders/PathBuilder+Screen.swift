@@ -40,6 +40,7 @@ public extension PathBuilders {
       }
 
       return NavigationNode(
+        id: screen.id,
         content: build(unwrapped),
         onAppear: onAppear,
         buildSuccessor: nesting.build(pathElement:)
@@ -120,6 +121,7 @@ public extension PathBuilders {
       }
 
       return NavigationNode(
+        id: screen.id,
         content: build(),
         onAppear: onAppear,
         buildSuccessor: nesting.build(pathElement:)
